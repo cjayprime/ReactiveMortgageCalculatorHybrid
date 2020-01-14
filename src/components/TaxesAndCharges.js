@@ -237,7 +237,7 @@ const styles = theme => {return {
 		fontFamily:'Lato'
 	},
 	fontStyle:{
-		fontSize: 10,
+		fontSize: '1.3125rem',
 		fontWeight: 500,
 		fontFamily: 'Lato',
 		lineHeight: '1.16667em',

@@ -1,3 +1,5 @@
+//uninstall react-google-charts
+
 import React from 'react';
 import { inject, observer } from 'mobx-react';
 
@@ -42,7 +44,7 @@ class App extends React.Component {
 				<Grid container className={classes.root} spacing={0}>
 					<Grid item xs={4} className={classes.sideMenu}>
 						<img alt="banner" src="images/banner.png" style={{width:'100%',height:'auto',marginTop:-25}}/>
-						<Typography component="div" style={{fontFamily:'Lato',color:'#7f7f7f',textAlign:'center',fontSize:14,fontSpacing:20}}><i>Responsive and reactive mortgage calculator that you can customize</i></Typography>
+						<Typography component="div" style={{fontFamily:'Lato',color:'#7f7f7f',textAlign:'center',fontSize:14,fontSpacing:20}}><i>Customizable, responsive and reactive mortgage calculator that gives you a soft landing.</i></Typography>
 						
 						<Paper elevation={0} style={{padding:20}}>
 							<AppBar position="static" style={{background:'#000',color:'#FFF',fontWeight:'bolder'}}>
@@ -55,7 +57,7 @@ class App extends React.Component {
 								>
 									<Tab label="Property Value" textColor="inherit" className={classes.tab}/>
 									<Tab label="Down Payment" textColor="inherit" className={classes.tab}/>
-									<Tab label="Lender and Interest" textColor="inherit" className={classes.tab}/>
+									<Tab label="Interest" textColor="inherit" className={classes.tab}/>
 									<Tab label="Tenure" textColor="inherit" className={classes.tab}/>
 									<Tab label="Taxes and Charges" textColor="inherit" className={classes.tab}/>
 									<Tab label="Other" textColor="inherit" className={classes.tab}/>
@@ -122,7 +124,7 @@ class App extends React.Component {
 									scriptHtml = await this.loadScript();
 									
 									this.setState({scriptHtml:scriptHtml},()=>{
-										this.setState({openGetCode:true,htmlGetCode:'<script  id="reactive-dependency" src="https://code.jquery.com/jquery-1.11.1.js" type="application/javascript"></script>\n<script>\n' + this.state.scriptHtml + '\n\n savedData = ' + JSON.stringify(store) + ';\n</script>'});
+										this.setState({openGetCode:true,htmlGetCode:'<script id="reactive-dependency" src="https://code.jquery.com/jquery-1.11.1.js" type="application/javascript"></script>\n<script>\n' + this.state.scriptHtml + '\n\n savedData = ' + JSON.stringify(store) + '\n</script>'});
 									});
 								}}>Get embed code</Button>
 								
@@ -131,7 +133,7 @@ class App extends React.Component {
 								TransitionComponent={Transition}
 								keepMounted
 								onClose={()=>{}}
-								style={{zIndex:'1000000'}}
+								style={{zIndex:1000000}}
 								>
 									<textarea id="copy-textarea" style={{width:0,height:0,left:-1000,top:-1000,position:'absolute'}} value={this.state.htmlGetCode} onChange={()=>{}}/>
 									<DialogTitle>
@@ -158,7 +160,7 @@ class App extends React.Component {
 									</DialogActions>
 								</Dialog>
 							</Paper>
-							<Paper id="reactive-sample" elevation={0} style={{overflow:'auto',position:'relative',padding:0,background:'#fff',justifyContent:'space-between',alignSelf:'center',height:'100%',width:'100%'}}>
+							<Paper id="reactive-sample" elevation={0} style={{overflow:'auto',position:'relative',background:'#fff',justifyContent:'space-between',alignSelf:'center',height:'100%',width:'100%'}}>
 								
 							</Paper>
 						</Paper>

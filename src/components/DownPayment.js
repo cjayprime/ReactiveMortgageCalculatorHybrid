@@ -75,7 +75,7 @@ class DownPayment extends React.Component {
 				
 				
 				<TextField
-					label={<Typography variant="subtitle2" component="span" style={{color:"#999", fontSize:13}}>{
+					label={<Typography variant="subtitle2" component="span" style={{color:"#999"}}>{
 						"Down Payment" +
 						((store.downPayment.valueType === 'amount') ? ' Amount' : ' Percent') + 
 						((store.downPayment.type === 'variable') ? ' - Default' : '')}</Typography>}
@@ -149,7 +149,7 @@ const styles = theme => {return {
 		fontFamily:'Lato'
 	},
 	fontStyle:{
-		fontSize: 10,
+		fontSize: '1.3125rem',
 		fontWeight: 500,
 		fontFamily: 'Lato',
 		lineHeight: '1.16667em',

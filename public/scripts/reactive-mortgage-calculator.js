@@ -22,7 +22,6 @@ $(document).ready(function(e){
 			var tag = document.createElement('script');
 			tag.src = scripts[i];
 			tag.async = false;
-			tag.type = 'application/javascript';
 			tag.onload = function(e){
 				if(e.target.src == material)REACTIVE_MORTGAGE_CALCULATOR.slider();
 				if(e.target.src == loader)REACTIVE_MORTGAGE_CALCULATOR.google.chart();
@@ -44,17 +43,10 @@ $(document).ready(function(e){
 				google.charts.load('current', {'packages':['corechart']});
 				google.charts.setOnLoadCallback(drawPieChart);
 				function drawPieChart() {
-					var lenders = savedData.lenders;
-					var loanAmount = 0;
-					for(var m = 0; m < lenders.length; m++){
-						var lender = savedData.lenders[m];
-						loanAmount = loanAmount + parseFloat(lender.loan[lender.loanType].default);
-						loanAmount = lender.loanValueType == 'percent' ? (loanAmount / 100) * propertyValue : loanAmount;
-					}
 					var data = google.visualization.arrayToDataTable([
 						['Data type', 'Data value'],
 						
-						['Principal & Interest', parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) - (parseFloat(savedData.downPayment.value[savedData.downPayment.type].default) + loanAmount)],
+						['Principal & Interest', parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) - parseFloat(savedData.downPayment.value[savedData.downPayment.type].default)],
 						[savedData.taxAndCharges.property.text, parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) * ( parseFloat(savedData.taxAndCharges.property.default) / 100)],
 						[savedData.taxAndCharges.annualHazard.text, parseFloat(savedData.taxAndCharges.annualHazard.default)],
 						[savedData.taxAndCharges.mortgageInsurance.text, parseFloat(savedData.taxAndCharges.mortgageInsurance.default)]
@@ -105,143 +97,112 @@ $(document).ready(function(e){
 					Insurance = MI + HI
 					*/
 					//In months
-					var lenders = savedData.lenders;
-					for(var m = 0; m < lenders.length; m++){
-						var lender = savedData.lenders[m];
-						var rate = (parseFloat(lender.value[lender.type].default) / 100) / 12;
-						var tenure = parseFloat(savedData.tenure.value[savedData.tenure.type].default) * 12;
-						var startAfter = parseFloat(lender.startAfter);
-						var propertyValue = parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default);
-						var downPayment = savedData.downPayment.valueType == 'percent' ? (parseFloat(savedData.downPayment.value[savedData.downPayment.type].default) / 100 ) * parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) : parseFloat(savedData.downPayment.value[savedData.downPayment.type].default);
-						var amountBorrowed = propertyValue - downPayment;
-						
-						
-						//Unique to Hybrid Calculator
-						//Deduct all individual lender loans
-						var loanAmount = parseFloat(lender.loan[lender.loanType].default);
-						loanAmount = lender.loanValueType == 'percent' ? (loanAmount / 100) * propertyValue : loanAmount;
-						amountBorrowed = amountBorrowed - loanAmount;
-						
-						
-						var inTenureTerms = Math.pow(1 + rate, tenure);
-						var monthlyPayment = Math.floor(amountBorrowed * ((rate * inTenureTerms) / (inTenureTerms - 1)));
-						var propertyTax = ((parseFloat(savedData.taxAndCharges.property.default) / 100) / 12) * propertyValue;
-						var annualHazard = parseFloat(savedData.taxAndCharges.annualHazard.default) / 12;
-						var mortgageInsurance = ((parseFloat(savedData.taxAndCharges.mortgageInsurance.default) / 100) / 12) * amountBorrowed;
-						var taxAndInsurance = propertyTax + annualHazard + mortgageInsurance;
-						
-						
-						var interest, principal, balance, oldInterest, oldPrincipal;
-						balance = amountBorrowed;
-						oldInterest = oldPrincipal = 0;
-						
-						var data = new google.visualization.DataTable();
-						data.addColumn('string', 'Category');
-						data.addColumn({type: 'string', role: 'tooltip', 'p': {'html': true}});
-						data.addColumn('number', 'Balance');
-						data.addColumn('number', 'Principal');
-						data.addColumn('number', 'Interest');
-						//Tooltip
-						var chartData = [];
-						var createCustomHTMLContent = function(interest, balance, principal, month) {
-							var interest = Math.round(interest * 100) / 100;
-							var balance = Math.round(balance * 100) / 100;
-							var principal = Math.round(principal * 100) / 100;
-							var circle = c = function(color){return '<div style="display:inline-block; width:10px; height:10px; border-radius:10px; margin-right:5px; align-self:center; background:'+color+';"></div>'};
-							return '<div style="padding:5px 5px 5px 5px;">' +
-								'<div><b>Month '+month+'</b><br></div>'+
-								'<table class="medals_layout">' + 
-									'<tr>' +
-										'<td>'+c('green')+'<b>Balance:</b> </td>' +
-										'<td><b>$' + balance + '</b></td>' +
-									'</tr>' +
-									'<tr>' +
-										'<td>'+c('blue')+'<b>Principal:</b> </td>' +
-										'<td><b>$' + principal + '</b></td>' +
-									'</tr>' + 
-									'<tr>' +
-										'<td>'+c('red')+'<b>Interest:</b> </td>' +
-										'<td><b>$' + interest + '</b></td>' +
-									'</tr>' + 
-								'</table>' + 
-							  '</div>';
-						}
-						for(var i = 0; i < (tenure + startAfter); i++){
-							chartData.push([]);
-							var j = chartData.length - 1;
-							chartData[j] = [];
-							chartData[j][0] = '';
-							if(i >= startAfter){
-								interest = rate * balance;
-								principal = monthlyPayment - interest;
-								balance = balance - principal;
-								//Tooltip
-								chartData[j][1] = createCustomHTMLContent(interest,balance,principal,i+1);
-								chartData[j][2] = balance + taxAndInsurance;
-								chartData[j][3] = oldPrincipal + principal;
-								chartData[j][4] = oldInterest + interest;
-								oldPrincipal += principal;
-								oldInterest += interest;
-							}else{
-								//Tooltip
-								chartData[j][1] = createCustomHTMLContent(0,0,0,i+1);
-								chartData[j][2] = 0;
-								chartData[j][3] = 0;
-								chartData[j][4] = 0;
-							}
-						}
-						data.addRows(chartData);
-						
-						var options = {
-							title: lender.name + '\'s Amortization Breakdown',
-							curveType: 'function',
-							legend: {
-								position: 'bottom'
-							},
-							tooltip: {
-								isHtml: true
-							},
-							hAxis: {
-							  title: 'Months'
-							},
-							vAxis: {
-							  title: 'Monthly Payments' + ' (' + savedData.others.currency.symbol + ')'
-							},
-							colors: ['green', 'blue', 'red'],
-							focusTarget: 'category',
-							trendlines: {
-							  0: {type: 'linear', color: 'green', opacity: 1},
-							  1: {type: 'linear', color: 'blue', opacity: .3},
-							  2: {type: 'linear', color: 'red', opacity: .3}
-							}
-						};
-						
-						var name = lender.name.split(/\s/).join('');
-						if($('.reactive-mortgage-calculator-linechart-'+name).length)
-						$('.reactive-mortgage-calculator-linechart-'+name).remove();
-						
-						var margin = !m ? 0 : 25;
-						$('#reactive-mortgage-calculator').append('<div class="reactive-mortgage-calculator-linechart-'+name+'" style="margin-top:'+margin+'px;height:500px; width: 100%;"></div>');
-						var chart = new google.visualization.LineChart($('.reactive-mortgage-calculator-linechart-'+name)[0]);
-						chart.draw(data, options);
+					var rate = (parseFloat(savedData.interestRate.value[savedData.interestRate.type].default) / 100) / 12;
+					var tenure = parseFloat(savedData.tenure.value[savedData.tenure.type].default) * 12;
+					var startAfter = parseFloat(savedData.tenure.startAfter);
+					var downPayment = savedData.downPayment.valueType == 'percent' ? (parseFloat(savedData.downPayment.value[savedData.downPayment.type].default) / 100) * parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) : parseFloat(savedData.downPayment.value[savedData.downPayment.type].default);
+					var amountBorrowed = (parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default) - downPayment);
+					
+					var inTenureTerms = Math.pow(1 + rate, tenure);
+					var monthlyPayment = amountBorrowed * ((rate * inTenureTerms) / (inTenureTerms - 1));
+					var propertyTax = (parseFloat(savedData.taxAndCharges.property.default) / 100) * amountBorrowed;
+					var annualHazard = parseFloat(savedData.taxAndCharges.annualHazard.default);
+					var mortgageInsurance = (parseFloat(savedData.taxAndCharges.mortgageInsurance.default) / 100) * amountBorrowed;
+					var taxAndInsurance = propertyTax + annualHazard + mortgageInsurance;
+					
+					var interest, principal, balance, oldInterest, oldPrincipal;
+					balance = amountBorrowed;
+					oldInterest = oldPrincipal = 0;
+					
+					var data = new google.visualization.DataTable();
+					data.addColumn('string', 'Category');
+        			data.addColumn({type: 'string', role: 'tooltip', 'p': {'html': true}});
+					data.addColumn('number', 'Balance');
+					data.addColumn('number', 'Principal');
+					data.addColumn('number', 'Interest');
+					//Tooltip
+					var chartData = [];
+					var createCustomHTMLContent = function(interest, balance, principal, month) {
+						var interest = Math.round(interest * 100) / 100;
+						var balance = Math.round(balance * 100) / 100;
+						var principal = Math.round(principal * 100) / 100;
+						var circle = c = function(color){return '<div style="display:inline-block; width:10px; height:10px; border-radius:10px; margin-right:5px; align-self:center; background:'+color+';"></div>'};
+						return '<div style="padding:5px 5px 5px 5px;">' +
+							'<div><b>Month '+month+'</b><br></div>'+
+							'<table class="medals_layout">' + 
+								'<tr>' +
+									'<td>'+c('green')+'<b>Balance:</b> </td>' +
+									'<td><b>$' + balance + '</b></td>' +
+								'</tr>' +
+								'<tr>' +
+									'<td>'+c('blue')+'<b>Principal:</b> </td>' +
+									'<td><b>$' + principal + '</b></td>' +
+								'</tr>' + 
+								'<tr>' +
+									'<td>'+c('red')+'<b>Interest:</b> </td>' +
+									'<td><b>$' + interest + '</b></td>' +
+								'</tr>' + 
+							'</table>' + 
+						  '</div>';
 					}
+					for(var i = 0; i < (tenure + startAfter); i++){
+						chartData.push([]);
+						var j = chartData.length - 1;
+						chartData[j] = [];
+						chartData[j][0] = '';
+						if(i >= startAfter){
+							interest = rate * balance;
+							principal = monthlyPayment - interest;
+							balance = balance - principal;
+							
+							//Tooltip
+							chartData[j][1] = createCustomHTMLContent(interest,balance,principal,i+1);
+							chartData[j][2] = balance + taxAndInsurance;
+							chartData[j][3] = oldPrincipal + principal;
+							chartData[j][4] = oldInterest + interest;
+							oldPrincipal += principal;
+							oldInterest += interest;
+						}else{
+							//Tooltip
+							chartData[j][1] = createCustomHTMLContent(0,0,0,i+1);
+							chartData[j][2] = 0;
+							chartData[j][3] = 0;
+							chartData[j][4] = 0;
+						}
+					}
+					data.addRows(chartData);
+						
+					var options = {
+						title: ' Amortization Breakdown',
+						curveType: 'function',
+						legend: {
+							position: 'bottom'
+						},
+						tooltip: {
+							isHtml: true
+						},
+						hAxis: {
+						  title: 'Months'
+						},
+						vAxis: {
+						  title: 'Monthly Payments' + ' (' + savedData.others.currency.symbol + ')'
+						},
+						colors: ['green', 'blue', 'red'],
+						focusTarget: 'category',
+						trendlines: {
+						  0: {type: 'linear', color: 'green', opacity: 1},
+						  1: {type: 'linear', color: 'blue', opacity: .3},
+						  2: {type: 'linear', color: 'red', opacity: .3}
+						}
+					};
+					
+					var chart = new google.visualization.LineChart($('#reactive-mortgage-calculator-linechart')[0]);
+					chart.draw(data, options);
 				}
 			}
 		},
 		init: function(){
 			var savedData = REACTIVE_MORTGAGE_CALCULATOR.data;
-			var interestRates = '';
-			var startAfters = '';
-			savedData.lenders.map(function(v,i){
-				var rate = savedData.lenders[i];
-				var currency = savedData.others.currency.symbol;
-				var loanAmount = parseFloat(rate.loan[rate.loanType].default);
-				var propertyValue = parseFloat(savedData.propertyValue.value[savedData.propertyValue.type].default);
-				loanAmount = rate.loanValueType == 'percent' ? (loanAmount / 100) * propertyValue : loanAmount;
-				var t = '<img src="'+rate.logo+'" style="width:12.5px; height:12.5px; margin-right: 5px;" />' + rate.name + ' (' + currency + loanAmount + '), ' + rate.text;
-				interestRates += REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(rate.name, t, rate.value[rate.type].maximum, rate.value[rate.type].minimum,  rate.type, rate.value[rate.type].default, '', '%');
-				startAfters += REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(rate.name+' Start After', rate.name + '\'s ' + 'Start After', 12, 0, '', rate.startAfter, '', ' Months');
-			});
 			
 			if($('#reactive-mortgage-calculator').length)
 			$('#reactive-mortgage-calculator').remove();
@@ -250,24 +211,28 @@ $(document).ready(function(e){
 			REACTIVE_MORTGAGE_CALCULATOR.base[attach](
 				'<div id="reactive-mortgage-calculator" style="overflow:hidden;display:flex;position:relative;flex-direction:row;flex-wrap: wrap;justify-content:center;align-self:center;z-index: 100000;width:100%;">'+
 					'<div style="padding: 10px; width: 45%; overflow: hidden;">'+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.propertyValue.text, savedData.propertyValue.text, savedData.propertyValue.value[savedData.propertyValue.type].maximum, savedData.propertyValue.value[savedData.propertyValue.type].minimum, savedData.propertyValue.type, savedData.propertyValue.value[savedData.propertyValue.type].default, savedData.others.currency.symbol, '')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.propertyValue.text, savedData.propertyValue.value[savedData.propertyValue.type].maximum, savedData.propertyValue.value[savedData.propertyValue.type].minimum, savedData.propertyValue.type, savedData.propertyValue.value[savedData.propertyValue.type].default, savedData.others.currency.symbol, '')
 						+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.downPayment.text, savedData.downPayment.text, savedData.downPayment.value[savedData.downPayment.type].maximum, savedData.downPayment.value[savedData.downPayment.type].minimum, savedData.downPayment.type, savedData.downPayment.value[savedData.downPayment.type].default, savedData.downPayment.valueType == 'percent' ? '' : savedData.others.currency.symbol, savedData.downPayment.valueType == 'percent' ? '%' : '')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.downPayment.text, savedData.downPayment.value[savedData.downPayment.type].maximum, savedData.downPayment.value[savedData.downPayment.type].minimum, savedData.downPayment.type, savedData.downPayment.value[savedData.downPayment.type].default, savedData.downPayment.valueType == 'percent' ? '' : savedData.others.currency.symbol, savedData.downPayment.valueType == 'percent' ? '%' : '')
 						+
-						interestRates
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.interestRate.text, savedData.interestRate.value[savedData.interestRate.type].maximum, savedData.interestRate.value[savedData.interestRate.type].minimum,  savedData.interestRate.type, savedData.interestRate.value[savedData.interestRate.type].default, '', '%')
 						+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.tenure.text, savedData.tenure.text, savedData.tenure.value[savedData.tenure.type].maximum, savedData.tenure.value[savedData.tenure.type].minimum, savedData.tenure.type, savedData.tenure.value[savedData.tenure.type].default, '', ' Years')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.tenure.text, savedData.tenure.value[savedData.tenure.type].maximum, savedData.tenure.value[savedData.tenure.type].minimum, savedData.tenure.type, savedData.tenure.value[savedData.tenure.type].default, '', ' Years')
 						+
-						startAfters
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML('Start After', 12, 0, '', savedData.tenure.startAfter, '', ' Months')
 						+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.property.text,savedData.taxAndCharges.property.text, savedData.taxAndCharges.property.maximum, savedData.taxAndCharges.property.minimum, savedData.taxAndCharges.property.type, savedData.taxAndCharges.property.default, '', '%')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.property.text, savedData.taxAndCharges.property.maximum, savedData.taxAndCharges.property.minimum, savedData.taxAndCharges.property.type, savedData.taxAndCharges.property.default, '', '%')
 						+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.annualHazard.text, savedData.taxAndCharges.annualHazard.text, savedData.taxAndCharges.annualHazard.maximum, savedData.taxAndCharges.annualHazard.minimum,'', savedData.taxAndCharges.annualHazard.default, savedData.others.currency.symbol, '')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.annualHazard.text, savedData.taxAndCharges.annualHazard.maximum, savedData.taxAndCharges.annualHazard.minimum,'', savedData.taxAndCharges.annualHazard.default, savedData.others.currency.symbol, '')
 						+
-						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.mortgageInsurance.text, savedData.taxAndCharges.mortgageInsurance.text, savedData.taxAndCharges.mortgageInsurance.maximum, savedData.taxAndCharges.mortgageInsurance.minimum, savedData.taxAndCharges.mortgageInsurance.type, savedData.taxAndCharges.mortgageInsurance.default,  '', '%')
+						REACTIVE_MORTGAGE_CALCULATOR.sliderHTML(savedData.taxAndCharges.mortgageInsurance.text, savedData.taxAndCharges.mortgageInsurance.maximum, savedData.taxAndCharges.mortgageInsurance.minimum, savedData.taxAndCharges.mortgageInsurance.type, savedData.taxAndCharges.mortgageInsurance.default,  '', '%')
 						+
 					'</div>'+
-					'<div id="reactive-mortgage-calculator-piechart" style="overflow: hidden; display: flex; justify-content: flex-start; flex-direction: column; align-items: center; width: 45%; height: auto"></div>'+
+					'<div id="reactive-mortgage-calculator-piechart" style="overflow: hidden; display: flex; justify-content: flex-start; flex-direction: column; align-items: center; width: 45%; height: auto">'+
+						
+					'</div>'+
+					'<div id="reactive-mortgage-calculator-linechart" style="height:500px; width: 100%;">'+
+					'</div>'+
 				'</div>'
 			);
 			
@@ -285,28 +250,21 @@ $(document).ready(function(e){
 				});
 				slider.listen('MDCSlider:input', function(){
 					var span = $(this).prev('div').children('span').children('span').eq(1);
-					var label = span.text(slider.value).data('label');
+					var current = span.text(slider.value).data('current');
 					var savedData = REACTIVE_MORTGAGE_CALCULATOR.data;
 					for(var data in savedData){
 						if(typeof savedData[data].text != 'undefined'){
-							if(label === 'Start After'){
+							if(current === 'Start After'){
 								savedData.tenure.startAfter = slider.value;
-							}else if(savedData[data].text === label){
+							}else if(savedData[data].text === current){
 								savedData[data].value[savedData[data].type].default = slider.value;
 								break;
 							}
-						}else if(data == 'taxAndCharges' || data == 'lenders'){
-							for(var taxORindex in savedData[data]){
-								if(data == 'taxAndCharges' && savedData[data][taxORindex].text === label){
-									savedData[data][taxORindex].default = slider.value;
-									break;
-								}else if(data == 'lenders' && savedData[data][taxORindex].name === label){
-									savedData[data][taxORindex].value[savedData[data][taxORindex].type].default = slider.value;
-									break;
-								}else if(data == 'lenders' && savedData[data][taxORindex].name + ' Start After' === label){
-									savedData[data][taxORindex].startAfter = slider.value;
-									break;
-								}
+						}else if(data == 'taxAndCharges'){
+							for(var tax in savedData[data])
+							if(savedData[data][tax].text === current){
+								savedData[data][tax].default = slider.value;
+								break;
 							}
 						}
 					}
@@ -315,7 +273,7 @@ $(document).ready(function(e){
 			});
 			window.mdc.autoInit();
 		},
-		sliderHTML: function(label,text,max,min,type,current,prefix,suffix){
+		sliderHTML: function(text,max,min,type,current,prefix,suffix){
 			var slider = type == 'fixed' ? '<br/><hr style="border: 0.6px solid #BDE0E0;"/><br/>' : '<div class="mdc-slider mdc-slider--discrete" tabindex="0" role="slider" aria-valuemin="'+min+'" aria-valuemax="'+max+'" aria-valuenow="'+current+'" aria-label="Select Value" data-mdc-auto-init="MDCSlider">\
 						<div class="mdc-slider__track-container">\
 							<div class="mdc-slider__track"></div>\
@@ -330,7 +288,7 @@ $(document).ready(function(e){
 							<div class="mdc-slider__focus-ring"></div>\
 						</div>\
 					</div>';
-			return ('<div>'+text+' : <span style="color:#018786"><span style="margin-left: 5px;"></span>'+prefix+'<span data-label="'+label+'">'+current+'</span>'+suffix+'</span></div>'+slider);
+			return ('<div>'+text+' : <span style="color:#018786"><span style="margin-left: 5px;"></span>'+prefix+'<span data-current="'+text+'">'+current+'</span>'+suffix+'</span></div>'+slider);
 		}
 	}
 
@@ -341,7 +299,7 @@ $(document).ready(function(e){
 	};
 	
 	if(typeof savedData !== 'undefined'){
-		var elem = $('#reactive-dependency').parent();
+		var elem = $('#reactive-dependency');
 		if(elem.length == 0){
 			elem = 'body';
 		}
